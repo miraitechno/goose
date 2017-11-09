@@ -2,6 +2,7 @@ package goose
 
 import (
 	"database/sql"
+
 	"github.com/mattn/go-sqlite3"
 )
 
@@ -22,6 +23,8 @@ func dialectByName(d string) SqlDialect {
 		return &MySqlDialect{}
 	case "sqlite3":
 		return &Sqlite3Dialect{}
+	case "db2":
+		return &DB2Dialect{}
 	}
 
 	return nil
@@ -119,5 +122,37 @@ func (m Sqlite3Dialect) dbVersionQuery(db *sql.DB) (*sql.Rows, error) {
 	case sqlite3.Error:
 		return nil, ErrTableDoesNotExist
 	}
+	return rows, err
+}
+
+////////////////////////////
+// DB2
+////////////////////////////
+
+type DB2Dialect struct{}
+
+func (m DB2Dialect) createVersionTableSql() string {
+	return `CREATE TABLE goose_db_version (
+                id int primary key generated always as identity (start with 1 increment by 1),
+                version_id bigint NOT NULL,
+                is_applied char(1) NOT NULL,
+                tstamp timestamp NULL default current_timestamp
+            );`
+}
+
+func (m DB2Dialect) insertVersionSql() string {
+	return "INSERT INTO goose_db_version (version_id, is_applied) VALUES (?, ?);"
+}
+
+func (m DB2Dialect) dbVersionQuery(db *sql.DB) (*sql.Rows, error) {
+	rows, err := db.Query("SELECT version_id, is_applied from goose_db_version ORDER BY id DESC")
+
+	// XXX: check for mysql specific error indicating the table doesn't exist.
+	// for now, assume any error is because the table doesn't exist,
+	// in which case we'll try to create it.
+	if err != nil {
+		return nil, ErrTableDoesNotExist
+	}
+
 	return rows, err
 }

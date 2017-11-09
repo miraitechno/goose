@@ -25,6 +25,7 @@ func init() {
 	gob.Register(PostgresDialect{})
 	gob.Register(MySqlDialect{})
 	gob.Register(Sqlite3Dialect{})
+	gob.Register(DB2Dialect{})
 }
 
 //
@@ -105,7 +106,7 @@ import (
 	"encoding/gob"
 
 	_ "{{.Import}}"
-	"bitbucket.org/liamstask/goose/lib/goose"
+	"github.com/miraitechno/goose/lib/goose"
 )
 
 func main() {
